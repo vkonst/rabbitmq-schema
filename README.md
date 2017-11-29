@@ -1,14 +1,18 @@
 # rabbitmq-schema [![Build Status](https://travis-ci.org/tjmehta/rabbitmq-schema.svg?branch=master)](https://travis-ci.org/tjmehta/rabbitmq-schema) [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](http://standardjs.com/)
-A schema definition module for RabbitMQ topologies
+A schema definition module for RabbitMQ topologies extended with the "x-lvc" ("Last Value Cach") exchange type
+
+The last value exchange acts like a direct exchange (binding keys are compared for equality with routing keys); but, it also keeps track of the last value that was published with each routing key, and when a queue is bound, it automatically enqueues the last value for the binding key.
+
+The rabbitmq-lvc-exchange plugin to RabbitMQ (https://github.com/rabbitmq/rabbitmq-lvc-exchange) needs to be enabled to use x-lvc exchanges.
 
 # Installation
 ```bash
-npm install rabbitmq-schema
+npm install rabbitmq-schema-lvc
 ```
 
 # Usage Summary
 ```js
-var RabbitSchema = require('rabbitmq-schema')
+var RabbitSchema = require('rabbitmq-schema-lvc')
 // Validate your rabbit topology by instantiating a RabbitSchema
 var schema = new RabbitSchema({
   exchange: 'exchange0', // exchange name
@@ -68,7 +72,7 @@ schema.validateMessage('queue0', { foo: 1 })
 ### Validate a Queue
 * Requires queue name and messageSchema
 ```js
-var RabbitSchema = require('rabbitmq-schema')
+var RabbitSchema = require('rabbitmq-schema-lvc')
 
 var queueSchema = new RabbitSchema({
   queue: 'queue-name', // queue name, required
@@ -85,11 +89,11 @@ var queueSchema = new RabbitSchema({
 * Requires exchange name, type, and atleast one binding
 * Requires all bindings have `routingPattern`
 ```js
-var RabbitSchema = require('rabbitmq-schema')
+var RabbitSchema = require('rabbitmq-schema-lvc')
 
 var directExchangeSchema = new RabbitSchema({
   exchange: 'direct-exchange-name', // exchange name, required
-  type: 'direct',  // required to be direct, topic, or fanout
+  type: 'direct',  // required to be direct, topic, fanout or x-vlc
   bindings: [{     // atleast 1 binding is required for every exchange
     routingPattern: 'foo.bar', // direct exchanges require bindings w/ a routingPattern
     destination: queueSchema,  // all bindings require a destination (queue or exchange schema)
@@ -104,12 +108,12 @@ var directExchangeSchema = new RabbitSchema({
 * Requires all bindings have `routingPattern`
 * Also works with arrays of parallel, nested, connected topologies (see `altSchema` in example below)
 ```js
-var RabbitSchema = require('rabbitmq-schema')
+var RabbitSchema = require('rabbitmq-schema-lvc')
 
 // validate a direct exchange topology
 var topicExchangeSchema = new RabbitSchema({
   exchange: 'topic-exchange-name', // exchange name, required
-  type: 'topic',  // required to be direct, topic, or fanout
+  type: 'topic',  // required to be direct, topic, fanout or x-vlc
   bindings: [{     // atleast 1 binding is required for every exchange
     routingPattern: 'foo.*', // topic exchanges require bindings w/ a routingPattern
     destination: queueSchema // all bindings require a destination (queue or exchange schema)
@@ -122,16 +126,33 @@ var topicExchangeSchema = new RabbitSchema({
 ### Validate a Fanout Exchange
 * Requires exchange name, type, and atleast one binding
 ```js
-var RabbitSchema = require('rabbitmq-schema')
+var RabbitSchema = require('rabbitmq-schema-lvc')
 
 var fanoutExchangeSchema = new RabbitSchema({
   exchange: 'fanout-exchange-name', // exchange name, required
-  type: 'fanout',  // required to be direct, topic, or fanout
+  type: 'fanout',  // required to be direct, topic, fanout or x-vlc
   bindings: [{     // atleast 1 binding is required for every exchange
     destination: queueSchema, // all bindings require a destination (queue or exchange schema)
     args: {}                  // binding args, optional
   }],
   options: {} // exchange options, optional
+})
+```
+### Validate an LVC Exchange
+* Requires exchange name, type, and atleast one binding
+* Requires all bindings have `routingPattern`
+```js
+var RabbitSchema = require('rabbitmq-schema-lvc')
+
+var lvcExchangeSchema = new RabbitSchema({
+  exchange: 'lvc-exch-name',    // exchange name, required
+  type: 'x-lvc',                // required to be direct, topic, fanout or x-vlc
+  bindings: [{                  // atleast 1 binding is required for every exchange
+    routingPattern: 'foo.bar',  // direct exchanges require bindings w/ a routingPattern
+    destination: queueSchema,   // all bindings require a destination (queue or exchange schema)
+    args: {}                    // binding args, optional
+  }],
+  options: {}                   // exchange options, optional
 })
 ```
 
@@ -142,7 +163,7 @@ var fanoutExchangeSchema = new RabbitSchema({
 
 ### Validate a full Topology
 ```js
-var RabbitSchema = require('rabbitmq-schema')
+var RabbitSchema = require('rabbitmq-schema-lvc')
 
 var foobarQueue = {
   queue: 'foobar-name', // queue name, required
@@ -169,7 +190,7 @@ var fooquxQueue = {
 
 var foobarExchange = {
   exchange: 'foobar-direct-exchange', // exchange name, required
-  type: 'direct',  // required to be direct, topic, or fanout
+  type: 'direct',  // required to be direct, topic, fanout or x-vlc
   bindings: [{     // atleast 1 binding is required for every exchange
     routingPattern: 'foo.bar', // direct exchanges require bindings w/ a routingPattern
     destination: foobarQueue,  // all bindings require a destination (queue or exchange schema)
@@ -180,7 +201,7 @@ var foobarExchange = {
 
 var fooquxExchange = {
   exchange: 'fooqux-direct-exchange', // exchange name, required
-  type: 'direct',  // required to be direct, topic, or fanout
+  type: 'direct',  // required to be direct, topic, fanout or x-vlc
   bindings: [{     // atleast 1 binding is required for every exchange
     routingPattern: 'foo.qux', // direct exchanges require bindings w/ a routingPattern
     destination: fooquxQueue,  // all bindings require a destination (queue or exchange schema)
@@ -191,7 +212,7 @@ var fooquxExchange = {
 
 var foostarExchange = {
   exchange: 'foostar-topic-exchange', // exchange name, required
-  type: 'topic',  // required to be direct, topic, or fanout
+  type: 'topic',  // required to be direct, topic, fanout or x-vlc
   bindings: [{     // atleast 1 binding is required for every exchange
     routingPattern: 'foo.*',    // topic exchanges require bindings w/ a routingPattern
     destination: foobarExchange,// all bindings require a destination (queue or exchange schema)
