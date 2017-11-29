@@ -1,9 +1,9 @@
 # rabbitmq-schema [![Build Status](https://travis-ci.org/tjmehta/rabbitmq-schema.svg?branch=master)](https://travis-ci.org/tjmehta/rabbitmq-schema) [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](http://standardjs.com/)
-A schema definition module for RabbitMQ topologies extended with the "x-lvc" ("Last Value Cach") exchange type
+A schema definition module for RabbitMQ topologies ([rabbitmq-schema package](https://www.npmjs.com/package/rabbitmq-schema)) extended with the ["x-lvc"](https://github.com/rabbitmq/rabbitmq-lvc-exchange) ("Last Value Cach") exchange type.
 
 The last value exchange acts like a direct exchange (binding keys are compared for equality with routing keys); but, it also keeps track of the last value that was published with each routing key, and when a queue is bound, it automatically enqueues the last value for the binding key.
 
-The rabbitmq-lvc-exchange plugin to RabbitMQ (https://github.com/rabbitmq/rabbitmq-lvc-exchange) needs to be enabled to use x-lvc exchanges.
+The [rabbitmq-lvc-exchange](https://github.com/rabbitmq/rabbitmq-lvc-exchange) plugin to RabbitMQ needs to be enabled to use x-lvc exchanges.
 
 # Installation
 ```bash
